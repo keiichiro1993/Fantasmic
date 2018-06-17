@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Rfcomm;
+using Windows.Devices.Enumeration;
+using Windows.Foundation;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
+using Windows.UI.Core;
 
 namespace FantasmicCommon.Utils.BTClient
 {
@@ -21,8 +25,8 @@ namespace FantasmicCommon.Utils.BTClient
 
     public class BTSender
     {
-        RfcommDeviceService _service;
-        StreamSocket _socket;
+        DeviceWatcher deviceWatcher;
+        public ObservableCollection<DeviceInformation> DeviceInfoCollection { get; set; }
 
         /*Events*/
         public event EventHandler InitializeCompleted;
@@ -34,98 +38,44 @@ namespace FantasmicCommon.Utils.BTClient
 
         public async void Initialize()
         {
-            // Enumerate devices with the object push service
-            var services =
-                await Windows.Devices.Enumeration.DeviceInformation.FindAllAsync(
-                    RfcommDeviceService.GetDeviceSelector(RfcommServiceId.GenericFileTransfer));
 
-            if (services != null && services.Count > 0)
-            {
-                // Initialize the target Bluetooth BR device
-                var service = await RfcommDeviceService.FromIdAsync(services[0].Id);
-
-                // Check that the service meets this App's minimum requirement
-                if (SupportsProtection(service) && await IsCompatibleVersion(service))
-                {
-                    _service = service;
-
-                    // Create a socket and connect to the target
-                    _socket = new StreamSocket();
-                    await _socket.ConnectAsync(
-                        _service.ConnectionHostName,
-                        _service.ConnectionServiceName,
-                        SocketProtectionLevel
-                            .BluetoothEncryptionAllowNullAuthentication);
-
-                    OnInitializeCompleted(new BTInitEventArgs(_service.ConnectionHostName.ToString()));
-                    // The socket is connected. At this point the App can wait for
-                    // the user to take some action, e.g. click a button to send a
-                    // file to the device, which could invoke the Picker and then
-                    // send the picked file. The transfer itself would use the
-                    // Sockets API and not the Rfcomm API, and so is omitted here for
-                    // brevity.
-                }
-            }
-            OnInitializeCompleted(new BTInitEventArgs("not found"));
+            //OnInitializeCompleted(new BTInitEventArgs("not found"));
 
         }
 
-        // This App requires a connection that is encrypted but does not care about
-        // whether its authenticated.
-        bool SupportsProtection(RfcommDeviceService service)
+
+        private void StartDeviceWatcher()
         {
-            switch (service.ProtectionLevel)
+            // Request additional properties
+            if (deviceWatcher == null)
             {
-                case SocketProtectionLevel.PlainSocket:
-                    if ((service.MaxProtectionLevel == SocketProtectionLevel
-                            .BluetoothEncryptionWithAuthentication)
-                        || (service.MaxProtectionLevel == SocketProtectionLevel
-                            .BluetoothEncryptionAllowNullAuthentication))
-                    {
-                        // The connection can be upgraded when opening the socket so the
-                        // App may offer UI here to notify the user that Windows may
-                        // prompt for a PIN exchange.
-                        return true;
-                    }
-                    else
-                    {
-                        // The connection cannot be upgraded so an App may offer UI here
-                        // to explain why a connection won't be made.
-                        return false;
-                    }
-                case SocketProtectionLevel.BluetoothEncryptionWithAuthentication:
-                    return true;
-                case SocketProtectionLevel.BluetoothEncryptionAllowNullAuthentication:
-                    return true;
+                deviceWatcher = DeviceInformation.CreateWatcher(RfcommDeviceService.GetDeviceSelector(RfcommServiceId.SerialPort));
+                deviceWatcher.Added += deviceWatcher_Added;
+                deviceWatcher.Removed += deviceWatcher_Removed;
+                deviceWatcher.Updated += deviceWatcher_Updated;
+                deviceWatcher.EnumerationCompleted += deviceWatcher_EnumerationCompleted;
             }
-            return false;
+            deviceWatcher.Start();
         }
 
-        // This App relies on CRC32 checking available in version 2.0 of the service.
-        const uint SERVICE_VERSION_ATTRIBUTE_ID = 0x0300;
-        const byte SERVICE_VERSION_ATTRIBUTE_TYPE = 0x0A;   // UINT32
-        const uint MINIMUM_SERVICE_VERSION = 200;
-        async Task<bool> IsCompatibleVersion(RfcommDeviceService service)
+        private void deviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         {
-            var attributes = await service.GetSdpRawAttributesAsync(
-                BluetoothCacheMode.Uncached);
-            var attribute = attributes[SERVICE_VERSION_ATTRIBUTE_ID];
-            var reader = DataReader.FromBuffer(attribute);
+            throw new NotImplementedException();
+        }
 
-            // The first byte contains the attribute' s type
-            byte attributeType = reader.ReadByte();
-            if (attributeType == SERVICE_VERSION_ATTRIBUTE_TYPE)
-            {
-                // The remainder is the data
-                uint version = reader.ReadUInt32();
-                return version >= MINIMUM_SERVICE_VERSION;
-            }
-            else
-            {
-                //TODO: なんか適切なエラーに置き換え
-                throw new Exception();
-            }
+        private void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        {
+            throw new NotImplementedException();
+        }
 
+        private void deviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            throw new NotImplementedException();
         }
     }
 
