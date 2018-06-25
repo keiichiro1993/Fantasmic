@@ -28,6 +28,11 @@ namespace FantasmicCommon.Utils.BTClient
         DeviceWatcher deviceWatcher;
         public ObservableCollection<DeviceInformation> DeviceInfoCollection { get; set; }
 
+        public BTSender()
+        {
+            DeviceInfoCollection = new ObservableCollection<DeviceInformation>();
+        }
+
         /*Events*/
         public event EventHandler InitializeCompleted;
 
@@ -36,11 +41,9 @@ namespace FantasmicCommon.Utils.BTClient
             InitializeCompleted?.Invoke(this, e);
         }
 
-        public async void Initialize()
+        public void Initialize()
         {
-
-            //OnInitializeCompleted(new BTInitEventArgs("not found"));
-
+            StartDeviceWatcher();
         }
 
 
@@ -58,24 +61,38 @@ namespace FantasmicCommon.Utils.BTClient
             deviceWatcher.Start();
         }
 
-        private void deviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        private void deviceWatcher_Added(DeviceWatcher sender, DeviceInformation deviceInfo)
         {
-            throw new NotImplementedException();
+            DeviceInfoCollection.Add(deviceInfo);
         }
 
         private void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
-            throw new NotImplementedException();
+            OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
         }
 
-        private void deviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
+        private void deviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
         {
-            throw new NotImplementedException();
+            foreach (var deviceInfo in DeviceInfoCollection)
+            {
+                if (deviceInfo.Id == deviceInfoUpdate.Id)
+                {
+                    deviceInfo.Update(deviceInfoUpdate);
+                    break;
+                }
+            }
         }
 
-        private void deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        private void deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
         {
-            throw new NotImplementedException();
+            foreach (var deviceInfo in DeviceInfoCollection)
+            {
+                if (deviceInfo.Id == deviceInfoUpdate.Id)
+                {
+                    DeviceInfoCollection.Remove(deviceInfo);
+                    break;
+                }
+            }
         }
     }
 

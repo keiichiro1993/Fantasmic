@@ -1,11 +1,14 @@
-﻿using FantasmicCommon.Utils.BTClient;
+﻿using ControllerApp.ViewModel;
+using FantasmicCommon.Utils.BTClient;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -24,23 +27,25 @@ namespace ControllerApp
     public sealed partial class MainPage : Page
     {
         BTSender sender;
+        MainPageViewModel viewModel;
         public MainPage()
         {
             this.InitializeComponent();
             sender = new BTSender();
             sender.InitializeCompleted += Sender_InitializeCompleted;
+            viewModel = new MainPageViewModel();
         }
 
         private void Sender_InitializeCompleted(object sender, EventArgs e)
         {
-            StatusTextBox.Text = "Initialized" + (e as BTInitEventArgs).ConnectionHostName;
+            viewModel.MainMessage = "Initialized" + (e as BTInitEventArgs).ConnectionHostName;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            StatusTextBox.Text = "Initializing...";
-            sender.Initialize();
+            StatusTextBox.DataContext = viewModel;
+            Task.Run(() => sender.Initialize());
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)

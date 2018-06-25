@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <TextBlock FontSize="35" Margin="0,0,20,0">Status:</TextBlock>
-            <TextBlock FontSize="35" x:Name="StatusTextBox" ></TextBlock>
+            <TextBlock FontSize="35" x:Name="StatusTextBox" Text="{Binding Path=MainMessage}"></TextBlock>
         </StackPanel>
         <Button Grid.Row="2" FontSize="30" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Click="SendButton_Click">Send</Button>
     </Grid>
