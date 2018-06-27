@@ -26,14 +26,15 @@ namespace ControllerApp
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        BTSender sender;
+        BTSender btClient;
         MainPageViewModel viewModel;
         public MainPage()
         {
             this.InitializeComponent();
-            sender = new BTSender();
-            sender.InitializeCompleted += Sender_InitializeCompleted;
+            btClient = new BTSender(this);
+            btClient.InitializeCompleted += Sender_InitializeCompleted;
             viewModel = new MainPageViewModel();
+            viewModel.DeviceInfoCollection = btClient.DeviceInfoCollection;
         }
 
         private void Sender_InitializeCompleted(object sender, EventArgs e)
@@ -44,13 +45,14 @@ namespace ControllerApp
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            StatusTextBox.DataContext = viewModel;
-            Task.Run(() => sender.Initialize());
+            this.DataContext = viewModel;
+            btClient.Initialize();
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-
+            //viewModel.MainMessage = "count: " + viewModel.DeviceInfoCollection.Count();
+            this.btClient.StopDeviceWatcher();
         }
     }
 }

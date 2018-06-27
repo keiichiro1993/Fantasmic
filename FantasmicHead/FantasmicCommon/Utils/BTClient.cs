@@ -11,6 +11,7 @@ using Windows.Foundation;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
 using Windows.UI.Core;
+using Windows.UI.Xaml.Controls;
 
 namespace FantasmicCommon.Utils.BTClient
 {
@@ -26,10 +27,12 @@ namespace FantasmicCommon.Utils.BTClient
     public class BTSender
     {
         DeviceWatcher deviceWatcher;
+        Page mainPage;
         public ObservableCollection<DeviceInformation> DeviceInfoCollection { get; set; }
 
-        public BTSender()
+        public BTSender(Page mainPage)
         {
+            this.mainPage = mainPage;
             DeviceInfoCollection = new ObservableCollection<DeviceInformation>();
         }
 
@@ -46,53 +49,76 @@ namespace FantasmicCommon.Utils.BTClient
             StartDeviceWatcher();
         }
 
+        public void StopDeviceWatcher()
+        {
+            deviceWatcher.Stop();
+        }
+
 
         private void StartDeviceWatcher()
         {
             // Request additional properties
             if (deviceWatcher == null)
             {
-                deviceWatcher = DeviceInformation.CreateWatcher(RfcommDeviceService.GetDeviceSelector(RfcommServiceId.SerialPort));
-                deviceWatcher.Added += deviceWatcher_Added;
+                //deviceWatcher = DeviceInformation.CreateWatcher(RfcommDeviceService.GetDeviceSelector(RfcommServiceId.SerialPort));
+                string[] requestedProperties = new string[] { "System.Devices.Aep.DeviceAddress", "System.Devices.Aep.IsConnected" };
+
+                deviceWatcher = DeviceInformation.CreateWatcher("(System.Devices.Aep.ProtocolId:=\"{e0cbf06c-cd8b-4647-bb8a-263b43f0f974}\")",
+                                                                requestedProperties,
+                                                                DeviceInformationKind.AssociationEndpoint);
+
+                deviceWatcher.Added += deviceWatcher_AddedAsync;
                 deviceWatcher.Removed += deviceWatcher_Removed;
-                deviceWatcher.Updated += deviceWatcher_Updated;
+                deviceWatcher.Updated += deviceWatcher_UpdatedAsync;
                 deviceWatcher.EnumerationCompleted += deviceWatcher_EnumerationCompleted;
             }
             deviceWatcher.Start();
         }
 
-        private void deviceWatcher_Added(DeviceWatcher sender, DeviceInformation deviceInfo)
+        private async void deviceWatcher_AddedAsync(DeviceWatcher sender, DeviceInformation deviceInfo)
         {
-            DeviceInfoCollection.Add(deviceInfo);
-        }
-
-        private void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
-        {
-            OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
-        }
-
-        private void deviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
-        {
-            foreach (var deviceInfo in DeviceInfoCollection)
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
             {
-                if (deviceInfo.Id == deviceInfoUpdate.Id)
-                {
-                    deviceInfo.Update(deviceInfoUpdate);
-                    break;
-                }
-            }
+                DeviceInfoCollection.Add(deviceInfo);
+            });
         }
 
-        private void deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
+        private async void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
-            foreach (var deviceInfo in DeviceInfoCollection)
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
             {
-                if (deviceInfo.Id == deviceInfoUpdate.Id)
+                OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
+            });
+        }
+
+        private async void deviceWatcher_UpdatedAsync(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
+        {
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+            {
+                foreach (var deviceInfo in DeviceInfoCollection)
                 {
-                    DeviceInfoCollection.Remove(deviceInfo);
-                    break;
+                    if (deviceInfo.Id == deviceInfoUpdate.Id)
+                    {
+                        deviceInfo.Update(deviceInfoUpdate);
+                        break;
+                    }
                 }
-            }
+            });
+        }
+
+        private async void deviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
+        {
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+            {
+                foreach (var deviceInfo in DeviceInfoCollection)
+                {
+                    if (deviceInfo.Id == deviceInfoUpdate.Id)
+                    {
+                        DeviceInfoCollection.Remove(deviceInfo);
+                        break;
+                    }
+                }
+            });
         }
     }
 
