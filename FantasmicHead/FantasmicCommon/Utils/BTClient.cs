@@ -24,6 +24,15 @@ namespace FantasmicCommon.Utils.BTClient
         public string ConnectionHostName { get; set; }
     }
 
+    public class BTMessageRecievedEventArgs : EventArgs
+    {
+        public BTMessageRecievedEventArgs(string message)
+        {
+            RecievedMessage = message;
+        }
+        public string RecievedMessage { get; set; }
+    }
+
     public class BTSender
     {
         DeviceWatcher deviceWatcher;
@@ -43,10 +52,22 @@ namespace FantasmicCommon.Utils.BTClient
 
         /*Events*/
         public event EventHandler InitializeCompleted;
+        public event EventHandler MessageRecieved;
 
-        protected virtual void OnInitializeCompleted(BTInitEventArgs e)
+        protected async virtual void OnInitializeCompleted(BTInitEventArgs e)
         {
-            InitializeCompleted?.Invoke(this, e);
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+            {
+                InitializeCompleted?.Invoke(this, e);
+            });
+        }
+
+        protected async virtual void OnMessageRecieved(BTMessageRecievedEventArgs e)
+        {
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+            {
+                MessageRecieved?.Invoke(this, e);
+            });
         }
 
         public void Initialize()
@@ -88,12 +109,9 @@ namespace FantasmicCommon.Utils.BTClient
             });
         }
 
-        private async void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        private void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
-            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
-            {
-                OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
-            });
+            OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
         }
 
         private async void deviceWatcher_UpdatedAsync(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
@@ -276,6 +294,11 @@ namespace FantasmicCommon.Utils.BTClient
                 //TODO: 受信した文字列のハンドル
                 String resultString = chatReader.ReadString(stringLength);
 
+                await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+                {
+                    OnMessageRecieved(new BTMessageRecievedEventArgs(resultString));
+                });
+
                 ReceiveStringLoop(chatReader);
             }
             catch (Exception ex)
@@ -387,24 +410,5 @@ namespace FantasmicCommon.Utils.BTClient
         }
     }
 
-    /// <summary>
-    /// Class containing Attributes and UUIDs that will populate the SDP record.
-    /// </summary>
-    class Constants
-    {
-        // The Chat Server's custom service Uuid: 34B1CF4D-1069-4AD6-89B6-E161D79BE4D8
-        public static readonly Guid RfcommChatServiceUuid = Guid.Parse("34B1CF4D-1069-4AD6-89B6-E161D79BE4D8");
 
-        // The Id of the Service Name SDP attribute
-        public const UInt16 SdpServiceNameAttributeId = 0x100;
-
-        // The SDP Type of the Service Name SDP attribute.
-        // The first byte in the SDP Attribute encodes the SDP Attribute Type as follows :
-        //    -  the Attribute Type size in the least significant 3 bits,
-        //    -  the SDP Attribute Type value in the most significant 5 bits.
-        public const byte SdpServiceNameAttributeType = (4 << 3) | 5;
-
-        // The value of the Service Name SDP attribute
-        public const string SdpServiceName = "Bluetooth Rfcomm Chat Service";
-    }
 }
