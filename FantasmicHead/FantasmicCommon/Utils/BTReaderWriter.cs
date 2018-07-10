@@ -33,7 +33,7 @@ namespace FantasmicCommon.Utils
             if (accessStatus == DeviceAccessStatus.DeniedByUser)
             {
                 //rootPage.NotifyUser("This app does not have access to connect to the remote device (please grant access in Settings > Privacy > Other Devices", NotifyType.ErrorMessage);
-                return;
+                throw new UnauthorizedAccessException("ユーザーによってデバイスへのアクセスが拒否されました。");
             }
             // If not, try to get the Bluetooth device
             try
@@ -44,14 +44,14 @@ namespace FantasmicCommon.Utils
             {
                 //rootPage.NotifyUser(ex.Message, NotifyType.ErrorMessage);
                 //ResetMainUI();
-                return;
+                throw new Exception("Bluetooth Device の取得に失敗しました。",ex);
             }
             // If we were unable to get a valid Bluetooth device object,
             // it's most likely because the user has specified that all unpaired devices
             // should not be interacted with.
             if (btDevice == null)
             {
-                //rootPage.NotifyUser("Bluetooth Device returned null. Access Status = " + accessStatus.ToString(), NotifyType.ErrorMessage);
+                throw new NullReferenceException("Bluetooth Device が空です。");
             }
 
             // This should return a list of uncached Bluetooth services (so if the server was not active when paired, it will still be detected by this call
@@ -64,34 +64,20 @@ namespace FantasmicCommon.Utils
             }
             else
             {
-                //rootPage.NotifyUser(
-                //   "Could not discover the chat service on the remote device",
-                //   NotifyType.StatusMessage);
-                //ResetMainUI();
-                return;
+                throw new NullReferenceException("対象のデバイスにBluetoothサービスが一つも見つかりません。正しい機器に接続していない可能性があります。");
             }
 
             // Do various checks of the SDP record to make sure you are talking to a device that actually supports the Bluetooth Rfcomm Chat Service
             var attributes = await BTDeviceService.GetSdpRawAttributesAsync();
             if (!attributes.ContainsKey(Constants.SdpServiceNameAttributeId))
             {
-                //rootPage.NotifyUser(
-                //    "The Chat service is not advertising the Service Name attribute (attribute id=0x100). " +
-                //    "Please verify that you are running the BluetoothRfcommChat server.",
-                //    NotifyType.ErrorMessage);
-                //ResetMainUI();
-                return;
+                throw new NullReferenceException("対象のデバイスにFantasmicサービスが見つかりません。正しい機器に接続していない可能性があります。");
             }
             var attributeReader = DataReader.FromBuffer(attributes[Constants.SdpServiceNameAttributeId]);
             var attributeType = attributeReader.ReadByte();
             if (attributeType != Constants.SdpServiceNameAttributeType)
             {
-                //rootPage.NotifyUser(
-                //    "The Chat service is using an unexpected format for the Service Name attribute. " +
-                //    "Please verify that you are running the BluetoothRfcommChat server.",
-                //    NotifyType.ErrorMessage);
-                //ResetMainUI();
-                return;
+                throw new NullReferenceException("対象のデバイスにFantasmicサービスが見つかりません。正しい機器に接続していない可能性があります。");
             }
             var serviceNameLength = attributeReader.ReadByte();
 
@@ -114,13 +100,11 @@ namespace FantasmicCommon.Utils
             }
             catch (Exception ex) when ((uint)ex.HResult == 0x80070490) // ERROR_ELEMENT_NOT_FOUND
             {
-                //rootPage.NotifyUser("Please verify that you are running the BluetoothRfcommChat server.", NotifyType.ErrorMessage);
-                //ResetMainUI();
+                throw new NullReferenceException("ソケットのオープンに失敗しました。対象のデバイスでアプリケーションが起動されていることをご確認ください。(0x80070490: ERROR_ELEMENT_NOT_FOUND)", ex);
             }
             catch (Exception ex) when ((uint)ex.HResult == 0x80072740) // WSAEADDRINUSE
             {
-                //rootPage.NotifyUser("Please verify that there is no other RFCOMM connection to the same device.", NotifyType.ErrorMessage);
-                //ResetMainUI();
+                throw new InvalidOperationException("ソケットのオープンに失敗しました。対象のデバイスがすでに他のサーバーに接続されている可能性があります。(0x80072740: WSAEADDRINUSE)", ex);
             }
         }
 
