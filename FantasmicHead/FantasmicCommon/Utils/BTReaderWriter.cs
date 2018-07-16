@@ -13,23 +13,24 @@ namespace FantasmicCommon.Utils
 {
     public class BTReaderWriter
     {
-        public DeviceInformation BTDeviceInfo { get; set; }
-        private RfcommDeviceService BTDeviceService { get; set; }
-        private StreamSocket BTStreamSocket { get; set; }
-        public DataWriter BTWriter { get; set; }
-        public DataReader BTReader { get; set; }
+        public DeviceInformation btDeviceInfo { get; set; }
+        public DataWriter btWriter { get; set; }
+        public DataReader btReader { get; set; }
+        private RfcommDeviceService btDeviceService { get; set; }
+        private StreamSocket btStreamSocket { get; set; }
+
         public BTReaderWriter(DeviceInformation device)
         {
-            BTDeviceInfo = device;
+            this.btDeviceInfo = device;
         }
 
         public async Task ConnectBTService()
         {
             BluetoothDevice btDevice;
-
+            
             // Perform device access checks before trying to get the device.
             // First, we check if consent has been explicitly denied by the user.
-            DeviceAccessStatus accessStatus = DeviceAccessInformation.CreateFromId(BTDeviceInfo.Id).CurrentStatus;
+            DeviceAccessStatus accessStatus = DeviceAccessInformation.CreateFromId(btDeviceInfo.Id).CurrentStatus;
             if (accessStatus == DeviceAccessStatus.DeniedByUser)
             {
                 //rootPage.NotifyUser("This app does not have access to connect to the remote device (please grant access in Settings > Privacy > Other Devices", NotifyType.ErrorMessage);
@@ -38,7 +39,7 @@ namespace FantasmicCommon.Utils
             // If not, try to get the Bluetooth device
             try
             {
-                btDevice = await BluetoothDevice.FromIdAsync(BTDeviceInfo.Id);
+                btDevice = await BluetoothDevice.FromIdAsync(btDeviceInfo.Id);
             }
             catch (Exception ex)
             {
@@ -60,7 +61,7 @@ namespace FantasmicCommon.Utils
 
             if (rfcommServices.Services.Count > 0)
             {
-                BTDeviceService = rfcommServices.Services[0];
+                btDeviceService = rfcommServices.Services[0];
             }
             else
             {
@@ -68,7 +69,7 @@ namespace FantasmicCommon.Utils
             }
 
             // Do various checks of the SDP record to make sure you are talking to a device that actually supports the Bluetooth Rfcomm Chat Service
-            var attributes = await BTDeviceService.GetSdpRawAttributesAsync();
+            var attributes = await btDeviceService.GetSdpRawAttributesAsync();
             if (!attributes.ContainsKey(Constants.SdpServiceNameAttributeId))
             {
                 throw new NullReferenceException("対象のデバイスにFantasmicサービスが見つかりません。正しい機器に接続していない可能性があります。");
@@ -88,15 +89,15 @@ namespace FantasmicCommon.Utils
 
             lock (this)
             {
-                BTStreamSocket = new StreamSocket();
+                btStreamSocket = new StreamSocket();
             }
             try
             {
-                await BTStreamSocket.ConnectAsync(BTDeviceService.ConnectionHostName, BTDeviceService.ConnectionServiceName);
+                await btStreamSocket.ConnectAsync(btDeviceService.ConnectionHostName, btDeviceService.ConnectionServiceName);
 
                 //SetChatUI(attributeReader.ReadString(serviceNameLength), bluetoothDevice.Name);
-                BTWriter = new DataWriter(BTStreamSocket.OutputStream);
-                BTReader = new DataReader(BTStreamSocket.InputStream);
+                btWriter = new DataWriter(btStreamSocket.OutputStream);
+                btReader = new DataReader(btStreamSocket.InputStream);
             }
             catch (Exception ex) when ((uint)ex.HResult == 0x80070490) // ERROR_ELEMENT_NOT_FOUND
             {
@@ -128,6 +129,6 @@ namespace FantasmicCommon.Utils
         public const byte SdpServiceNameAttributeType = (4 << 3) | 5;
 
         // The value of the Service Name SDP attribute
-        public const string SdpServiceName = "Bluetooth Rfcomm Chat Service";
+        public const string SdpServiceName = "Bluetooth Rfcomm Fantasmic Service";
     }
 }
