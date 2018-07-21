@@ -12,12 +12,17 @@
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
+            <RowDefinition Height="50"></RowDefinition>
         </Grid.RowDefinitions>
-        <ListBox ItemsSource="{Binding Path=DeviceInfoCollection}" DisplayMemberPath="Name"></ListBox>
+        <ListBox x:Name="DeviceListBox" ItemsSource="{Binding Path=DeviceInfoCollection}" DisplayMemberPath="Name"></ListBox>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
-            <TextBlock FontSize="35" Margin="0,0,20,0">Status:</TextBlock>
-            <TextBlock FontSize="35" x:Name="StatusTextBox" Text="{Binding Path=MainMessage}"></TextBlock>
+            <TextBlock FontSize="35" Margin="5,0,20,0">Message:</TextBlock>
+            <TextBlock FontSize="35" x:Name="MessageTextBox" Text="{Binding Path=MainMessage}"></TextBlock>
         </StackPanel>
         <Button Grid.Row="2" FontSize="30" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Click="SendButton_Click">Send</Button>
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <TextBlock FontSize="35" Margin="5,0,20,0">Status:</TextBlock>
+            <TextBlock FontSize="35" x:Name="StatusTextBox" Text="{Binding Path=StatusMessage}"></TextBlock>
+        </StackPanel>
     </Grid>
 </Page>

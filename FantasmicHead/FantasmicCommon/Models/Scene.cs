@@ -10,12 +10,12 @@ namespace FantasmicCommon.Models
     {
         public enum Scenes { Arabian, Intro };
 
-        public int CurrentMode { get; set; }
+        public int CurrentSequence { get; set; }
         public Scenes CurrentScene { get; set; }
 
-        public Scene(Scenes scene, int mode)
+        public Scene(Scenes scene, int sequence)
         {
-            CurrentMode = mode;
+            CurrentSequence = sequence;
             CurrentScene = scene;
         }
     }

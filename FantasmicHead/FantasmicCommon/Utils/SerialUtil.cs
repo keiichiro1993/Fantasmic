@@ -46,7 +46,7 @@ namespace FantasmicCommon.Utils
 
         public async Task<bool> SendData(Scene scene)
         {
-            string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentMode + "\n";
+            string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
 
             foreach (var serialDevice in serialDevices)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,8 +17,7 @@ namespace FantasmicCommon.Utils
         private RfcommServiceProvider serviceProvider;
         private StreamSocketListener socketListener;
 
-        private StreamSocket socket;
-        private DataWriter writer;
+        private List<BTReaderWriter> btReaderWriters { get; set; }
 
         //TODO: writerをリストにして複数デバイス管理
 
@@ -25,8 +25,9 @@ namespace FantasmicCommon.Utils
         /// Initializes the server using RfcommServiceProvider to advertise the Chat Service UUID and start listening
         /// for incoming connections.
         /// </summary>
-        private async void InitializeRfcommServer()
+        public async Task InitializeRfcommServer()
         {
+            btReaderWriters = new List<BTReaderWriter>();
             try
             {
                 serviceProvider = await RfcommServiceProvider.CreateAsync(RfcommServiceId.FromUuid(Constants.RfcommChatServiceUuid));
@@ -39,7 +40,7 @@ namespace FantasmicCommon.Utils
                 ListenButton.IsEnabled = true;
                 DisconnectButton.IsEnabled = false;
                 */
-                return;
+                throw new InvalidOperationException("デバイスの設定で Bluetooth が有効になっていることをご確認ください。", ex);
             }
 
 
@@ -58,15 +59,14 @@ namespace FantasmicCommon.Utils
             {
                 serviceProvider.StartAdvertising(socketListener, true);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 // If you aren't able to get a reference to an RfcommServiceProvider, tell the user why.  Usually throws an exception if user changed their privacy settings to prevent Sync w/ Devices.  
                 /*rootPage.NotifyUser(e.Message, NotifyType.ErrorMessage);
                 ListenButton.IsEnabled = true;
                 DisconnectButton.IsEnabled = false;*/
-                return;
+                throw new Exception("サーバーを開始できませんでした。", ex);
             }
-
             //rootPage.NotifyUser("Listening for incoming connections", NotifyType.StatusMessage);
         }
 
@@ -102,88 +102,39 @@ namespace FantasmicCommon.Utils
         private async void OnConnectionReceived(
             StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
         {
-            // Don't need the listener anymore
-            socketListener.Dispose();
-            socketListener = null;
-
+            StreamSocket btStreamSocket;
             try
             {
-                socket = args.Socket;
+                btStreamSocket = args.Socket;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 /*await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
                     rootPage.NotifyUser(e.Message, NotifyType.ErrorMessage);
                 });
                 Disconnect();*/
-                return;
+                throw new Exception("新しいデバイスが見つかりましたが、Socketの取得に失敗しました。", ex);
             }
 
             // Note - this is the supported way to get a Bluetooth device from a given socket
-            var remoteDevice = await BluetoothDevice.FromHostNameAsync(socket.Information.RemoteHostName);
+            var remoteDevice = await BluetoothDevice.FromHostNameAsync(btStreamSocket.Information.RemoteHostName);
 
-            writer = new DataWriter(socket.OutputStream);
-            var reader = new DataReader(socket.InputStream);
-            bool remoteDisconnection = false;
+            var writer = new DataWriter(btStreamSocket.OutputStream);
+            var reader = new DataReader(btStreamSocket.InputStream);
 
-            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            var btReaderWriter = new BTReaderWriter(reader, writer);
+            btReaderWriters.Add(btReaderWriter);
+        }
+
+        public void SendMessage(String message)
+        {
+            Parallel.ForEach(btReaderWriters, async btReaderWriter =>
             {
-                rootPage.NotifyUser("Connected to Client: " + remoteDevice.Name, NotifyType.StatusMessage);
+                btReaderWriter.btWriter.WriteUInt32((uint)message.Length);
+                btReaderWriter.btWriter.WriteString(message);
+                await btReaderWriter.btWriter.StoreAsync();
             });
-
-            // Infinite read buffer loop
-            while (true)
-            {
-                try
-                {
-                    // Based on the protocol we've defined, the first uint is the size of the message
-                    uint readLength = await reader.LoadAsync(sizeof(uint));
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < sizeof(uint))
-                    {
-                        remoteDisconnection = true;
-                        break;
-                    }
-                    uint currentLength = reader.ReadUInt32();
-
-                    // Load the rest of the message since you already know the length of the data expected.  
-                    readLength = await reader.LoadAsync(currentLength);
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < currentLength)
-                    {
-                        remoteDisconnection = true;
-                        break;
-                    }
-                    string message = reader.ReadString(currentLength);
-
-                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        ConversationListBox.Items.Add("Received: " + message);
-                    });
-                }
-                // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
-                catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
-                {
-                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        rootPage.NotifyUser("Client Disconnected Successfully", NotifyType.StatusMessage);
-                    });
-                    break;
-                }
-            }
-
-            reader.DetachStream();
-            if (remoteDisconnection)
-            {
-                Disconnect();
-                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    rootPage.NotifyUser("Client disconnected", NotifyType.StatusMessage);
-                });
-            }
         }
     }
 }

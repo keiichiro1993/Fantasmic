@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Core;
@@ -33,13 +34,19 @@ namespace ControllerApp
             this.InitializeComponent();
             btClient = new BTSender(this);
             btClient.InitializeCompleted += Sender_InitializeCompleted;
+            btClient.MessageRecieved += BtClient_MessageRecieved;
             viewModel = new MainPageViewModel();
             viewModel.DeviceInfoCollection = btClient.DeviceInfoCollection;
         }
 
+        private void BtClient_MessageRecieved(object sender, EventArgs e)
+        {
+            viewModel.MainMessage = (e as BTMessageRecievedEventArgs).RecievedMessage;
+        }
+
         private void Sender_InitializeCompleted(object sender, EventArgs e)
         {
-            viewModel.MainMessage = "Initialized" + (e as BTInitEventArgs).ConnectionHostName;
+            viewModel.StatusMessage = (e as BTInitEventArgs).ConnectionHostName;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -52,7 +59,9 @@ namespace ControllerApp
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
             //viewModel.MainMessage = "count: " + viewModel.DeviceInfoCollection.Count();
-            this.btClient.StopDeviceWatcher();
+            //this.btClient.StopDeviceWatcher();
+            
+            btClient.ConnectReciever(DeviceListBox.SelectedItem as DeviceInformation);
         }
     }
 }

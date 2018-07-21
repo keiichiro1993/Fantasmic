@@ -24,10 +24,16 @@ namespace FantasmicCommon.Utils
             this.btDeviceInfo = device;
         }
 
+        public BTReaderWriter(DataReader reader, DataWriter writer)
+        {
+            this.btWriter = writer;
+            this.btReader = reader;
+        }
+
         public async Task ConnectBTService()
         {
             BluetoothDevice btDevice;
-            
+
             // Perform device access checks before trying to get the device.
             // First, we check if consent has been explicitly denied by the user.
             DeviceAccessStatus accessStatus = DeviceAccessInformation.CreateFromId(btDeviceInfo.Id).CurrentStatus;
@@ -45,7 +51,7 @@ namespace FantasmicCommon.Utils
             {
                 //rootPage.NotifyUser(ex.Message, NotifyType.ErrorMessage);
                 //ResetMainUI();
-                throw new Exception("Bluetooth Device の取得に失敗しました。",ex);
+                throw new Exception("Bluetooth Device の取得に失敗しました。", ex);
             }
             // If we were unable to get a valid Bluetooth device object,
             // it's most likely because the user has specified that all unpaired devices

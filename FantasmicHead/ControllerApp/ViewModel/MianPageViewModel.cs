@@ -25,7 +25,8 @@ namespace ControllerApp.ViewModel
 
         public MainPageViewModel()
         {
-            MainMessage = "Initializing...";
+            StatusMessage = "Initializing...";
+            MainMessage = "Message will appear here.";
         }
 
         string _MainMessage;
@@ -39,6 +40,20 @@ namespace ControllerApp.ViewModel
             {
                 _MainMessage = value;
                 NotifyPropertyChanged("MainMessage");
+            }
+        }
+
+        string _StatusMessage;
+        public string StatusMessage
+        {
+            get
+            {
+                return _StatusMessage;
+            }
+            set
+            {
+                _StatusMessage = value;
+                NotifyPropertyChanged("StatusMessage");
             }
         }
 

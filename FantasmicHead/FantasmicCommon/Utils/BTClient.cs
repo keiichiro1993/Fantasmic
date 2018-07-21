@@ -106,6 +106,7 @@ namespace FantasmicCommon.Utils.BTClient
             await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
             {
                 DeviceInfoCollection.Add(deviceInfo);
+                OnInitializeCompleted(new BTInitEventArgs("found: " + deviceInfo.Name));
             });
         }
 
@@ -144,36 +145,11 @@ namespace FantasmicCommon.Utils.BTClient
             });
         }
 
-        private async void ConnectReciever(DeviceInformation device)
+        public async void ConnectReciever(DeviceInformation device)
         {
             var btRW = new BTReaderWriter(device);
             await btRW.ConnectBTService();
             ReceiveStringLoop(btRW.btReader);
-
-        }
-
-        //TODO: ConnectとRecieve分ける。
-        private async void ConnectSender(DeviceInformation device)
-        {
-            try
-            {
-                if (MessageTextBox.Text.Length != 0)
-                {
-                    chatWriter.WriteUInt32((uint)MessageTextBox.Text.Length);
-                    chatWriter.WriteString(MessageTextBox.Text);
-
-                    ConversationList.Items.Add("Sent: " + MessageTextBox.Text);
-                    MessageTextBox.Text = "";
-                    await chatWriter.StoreAsync();
-
-                }
-            }
-            catch (Exception ex) when ((uint)ex.HResult == 0x80072745)
-            {
-                // The remote device has disconnected the connection
-                rootPage.NotifyUser("Remote side disconnect: " + ex.HResult.ToString() + " - " + ex.Message,
-                    NotifyType.StatusMessage);
-            }
         }
 
         private async void ReceiveStringLoop(DataReader chatReader)
@@ -198,11 +174,7 @@ namespace FantasmicCommon.Utils.BTClient
                 //ConversationList.Items.Add("Received: " + chatReader.ReadString(stringLength));
                 //TODO: 受信した文字列のハンドル
                 String resultString = chatReader.ReadString(stringLength);
-
-                await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
-                {
-                    OnMessageRecieved(new BTMessageRecievedEventArgs(resultString));
-                });
+                OnMessageRecieved(new BTMessageRecievedEventArgs(resultString));
 
                 ReceiveStringLoop(chatReader);
             }
