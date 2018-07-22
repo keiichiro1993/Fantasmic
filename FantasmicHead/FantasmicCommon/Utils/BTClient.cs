@@ -159,7 +159,7 @@ namespace FantasmicCommon.Utils.BTClient
                 uint size = await chatReader.LoadAsync(sizeof(uint));
                 if (size < sizeof(uint))
                 {
-                    Disconnect("Remote device terminated connection - make sure only one instance of server is running on remote device");
+                    Disconnect();
                     return;
                 }
 
@@ -196,13 +196,14 @@ namespace FantasmicCommon.Utils.BTClient
                     }
                     else
                     {
-                        Disconnect("Read stream failed with error: " + ex.Message);
+                        Disconnect();
+                        throw new Exception("サーバーとの接続が解除されました。", ex);
                     }
                 }
             }
         }
 
-        private void Disconnect(string disconnectReason)
+        private void Disconnect()
         {
             if (chatWriter != null)
             {
@@ -224,9 +225,6 @@ namespace FantasmicCommon.Utils.BTClient
                     chatSocket = null;
                 }
             }
-
-            //rootPage.NotifyUser(disconnectReason, NotifyType.StatusMessage);
-            //ResetMainUI();
         }
     }
 }

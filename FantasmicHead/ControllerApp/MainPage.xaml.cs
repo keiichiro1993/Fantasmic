@@ -59,9 +59,8 @@ namespace ControllerApp
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
             //viewModel.MainMessage = "count: " + viewModel.DeviceInfoCollection.Count();
-            //this.btClient.StopDeviceWatcher();
-            
             btClient.ConnectReciever(DeviceListBox.SelectedItem as DeviceInformation);
+            //this.btClient.StopDeviceWatcher();//クライアント側は２つ以上のデバイスと接続する必要ない
         }
     }
 }
