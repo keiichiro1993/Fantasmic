@@ -62,7 +62,7 @@ namespace FantasmicHead
                 {
                     await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        mediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/fantasmic_aladdin720p.mp4"));
+                        mediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/fantasmic_aladdin480p2.mp4"));
                     //await serial.SendData(new Scene(Scene.Scenes.Arabian, 0));
                     mediaPlayerElement.MediaPlayer.Play();
                     });
