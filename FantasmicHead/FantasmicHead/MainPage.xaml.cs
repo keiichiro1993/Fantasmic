@@ -38,7 +38,7 @@ namespace FantasmicHead
             btServer = new BTServer();
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)//TODO: MediaPlayer から現在の再生位置を取得してアクションするように変更したい。0.3秒間隔くらいで　
         {
             base.OnNavigatedTo(e);
 
@@ -63,8 +63,11 @@ namespace FantasmicHead
                     await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
                         mediaPlayerElement.Source = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/fantasmic_aladdin480p2.mp4"));
-                    //await serial.SendData(new Scene(Scene.Scenes.Arabian, 0));
-                    mediaPlayerElement.MediaPlayer.Play();
+                        //await serial.SendData(new Scene(Scene.Scenes.Arabian, 0));
+                        mediaPlayerElement.MediaPlayer.Play();
+
+                        
+
                     });
                 }, new TimeSpan(0, 0, 1)),
 
