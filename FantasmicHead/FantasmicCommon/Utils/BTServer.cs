@@ -1,6 +1,8 @@
-﻿using System;
+﻿using FantasmicCommon.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +19,7 @@ namespace FantasmicCommon.Utils
         private RfcommServiceProvider serviceProvider;
         private StreamSocketListener socketListener;
 
-        private List<BTReaderWriter> btReaderWriters { get; set; }
+        private List<BTReaderWriter> btReaderWriters;
 
         //TODO: writerをリストにして複数デバイス管理
 
@@ -127,8 +129,11 @@ namespace FantasmicCommon.Utils
             btReaderWriters.Add(btReaderWriter);
         }
 
-        public void SendMessage(String message)
+        public void SendMessage(Scene scene)
         {
+            string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
+            Debug.WriteLine("Bluetooth send: " + message);
+
             Parallel.ForEach(btReaderWriters, async btReaderWriter =>
             {
                 btReaderWriter.btWriter.WriteUInt32((uint)message.Length);

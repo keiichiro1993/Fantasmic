@@ -1,6 +1,7 @@
 ﻿using FantasmicCommon.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,23 +45,23 @@ namespace FantasmicCommon.Utils
             }
         }
 
-        public async Task<bool> SendData(Scene scene)
+        public void SendData(Scene scene)
         {
             string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
-
-            foreach (var serialDevice in serialDevices)
+            Debug.WriteLine("Serial send: " + message);
+            Parallel.ForEach(serialDevices, async serialDevice =>
             {
-                DataWriter dataWriteeObject = new DataWriter(serialDevice.OutputStream);
-                dataWriteeObject.WriteString(message);
-                await dataWriteeObject.StoreAsync();
-                /*
-                DataReader dataReaderObject = new DataReader(serialDevice.InputStream);
-                await dataReaderObject.LoadAsync(128);
-                uint bytesToRead = dataReaderObject.UnconsumedBufferLength;
-                string receivedStrings = dataReaderObject.ReadString(bytesToRead);
-                */
-            }
-            return true;
+                try
+                {
+                    DataWriter dataWriteeObject = new DataWriter(serialDevice.OutputStream);
+                    dataWriteeObject.WriteString(message);
+                    await dataWriteeObject.StoreAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("error: " + ex.Message);
+                }
+            });
         }
 
         public async Task<string> ReceiveData()
