@@ -129,17 +129,17 @@ namespace FantasmicCommon.Utils
             btReaderWriters.Add(btReaderWriter);
         }
 
-        public void SendMessage(Scene scene)
+        public async Task SendMessage(Scene scene)
         {
             string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
             Debug.WriteLine("Bluetooth send: " + message);
 
-            Parallel.ForEach(btReaderWriters, async btReaderWriter =>
+            foreach (var btReaderWriter in btReaderWriters)
             {
                 btReaderWriter.btWriter.WriteUInt32((uint)message.Length);
                 btReaderWriter.btWriter.WriteString(message);
                 await btReaderWriter.btWriter.StoreAsync();
-            });
+            }
         }
     }
 }

@@ -36,16 +36,18 @@ void setup() {
   strip.show(); // Initialize all pixels to 'off'
 }
 
-int currentScene;
-int currentMode;
+int currentScene = 0;
+int currentMode = 8;
 bool introloop;
+bool first;
 
 //できればモード切替のたびに呼んだほうが良い。
 void initVariables(){
   introloop = false;
   strip.setBrightness(255);
-  currentScene = 0;
-  currentMode = 8;
+  //currentScene = 0;
+  //currentMode = 8;
+  first = true;
 }
 
 void loop() {
@@ -70,10 +72,10 @@ void loop() {
         rotateColorInOneColor(strip.Color(0, 0, 255), strip.Color(0, 0, 50));
         break;
       case 1:
-        changeTwoColors(strip.Color(50, 50, 255), strip.Color(0, 0, 100));
+        changeTwoColors(strip.Color(50, 50, 255), strip.Color(0, 0, 100), 250);
         break;
       case 2:
-        changeTwoColors(strip.Color(0, 200, 70), strip.Color(100, 200, 0));
+        changeTwoColors(strip.Color(0, 200, 70), strip.Color(100, 200, 0), 250);
         break;
       case 3:
         brighterOneColor(strip.Color(200, 0, 0));
@@ -92,6 +94,88 @@ void loop() {
           strip.setPixelColor(i, strip.Color(0, 0, 0));
         }
         strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      default:
+        rainbowCycle(20);
+        break;
+    }
+  }else if(currentScene == 2){//Princess
+    switch(currentMode){
+      case 0:
+        if(first){
+          strip.setBrightness(30);
+          for(i=0; i<strip.numPixels(); i++){
+            if(i%3 == 0){
+              strip.setPixelColor(i, strip.Color(200, 50, 100));
+              //Serial.println("color set");
+            }else{
+              strip.setPixelColor(i, strip.Color(60, 0, 0));
+            }
+          }
+          strip.show();
+          for(int j=40; j<256; j+=2){
+            strip.setBrightness(j);
+            //Serial.println(j);
+            strip.show();
+            delay(10);
+          }
+          first = false;
+        }
+        if(checkSignal()){
+          return;
+        }
+        /*for(i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0, 0, 60));
+        }
+        strip.setBrightness(255);
+        strip.show();*/
+        delay(100);
+        break;
+      case 1:
+        for(i=0; i<strip.numPixels(); i++){
+          if(i%3 == 0){
+            strip.setPixelColor(i, strip.Color(60, 10, 30));
+          }else{
+            strip.setPixelColor(i, strip.Color(0, 0, 60));
+          }
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      case 2:
+        strip.setBrightness(255);
+        changeTwoColors(strip.Color(60, 10, 30), strip.Color(255, 255, 255), 100);
+        break;
+      case 3:
+        strip.setBrightness(255);
+        for(i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0, 0, 60));
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      case 4:
+        for(i=0; i<strip.numPixels(); i++){
+          if(i%3 == 0){
+            strip.setPixelColor(i, strip.Color(250, 150, 50));
+          }else{
+            strip.setPixelColor(i, strip.Color(0, 0, 60));
+          }
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
         delay(100);
         break;
       default:
@@ -130,6 +214,7 @@ bool checkSignal(){
   Serial.println(currentMode);
 
   str = "no data";
+  initVariables();
   return true;
 }
 
@@ -221,7 +306,7 @@ void rotateColorInOneColor(uint32_t color1, uint32_t color2){
   }
 }
 
-void changeTwoColors(uint32_t color1, uint32_t color2)
+void changeTwoColors(uint32_t color1, uint32_t color2, int delayInt)
 {
   int i, j;
 
@@ -245,7 +330,7 @@ void changeTwoColors(uint32_t color1, uint32_t color2)
     {
       return;
     }
-    delay(250);
+    delay(delayInt);
   } 
 }
 
@@ -401,24 +486,6 @@ void rainbowCycle(uint8_t wait) {
       return;
     }
     delay(wait);
-  }
-}
-
-//Theatre-style crawling lights.
-void theaterChase(uint32_t c, uint8_t wait) {
-  for (int j=0; j<10; j++) {  //do 10 cycles of chasing
-    for (int q=0; q < 3; q++) {
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, c);    //turn every third pixel on
-      }
-      strip.show();
-
-      delay(wait);
-
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
-      }
-    }
   }
 }
 

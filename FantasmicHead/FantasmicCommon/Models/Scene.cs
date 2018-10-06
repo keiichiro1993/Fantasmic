@@ -8,7 +8,7 @@ namespace FantasmicCommon.Models
 {
     public class Scene
     {
-        public enum Scenes { Arabian, Intro };
+        public enum Scenes { Arabian, Intro, Princess, Villans };
 
         public int CurrentSequence { get; set; }
         public Scenes CurrentScene { get; set; }

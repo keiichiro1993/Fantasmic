@@ -14,10 +14,12 @@ namespace FantasmicCommon.Utils
     public class SerialUtil
     {
         private List<SerialDevice> serialDevices;
+        private List<DataWriter> dataWriters;
 
         public SerialUtil()
         {
             serialDevices = new List<SerialDevice>();
+            dataWriters = new List<DataWriter>();
         }
 
         public async Task InitSerial()
@@ -37,6 +39,7 @@ namespace FantasmicCommon.Utils
                     serialDevice.ReadTimeout = TimeSpan.FromMilliseconds(1000);
                     serialDevice.WriteTimeout = TimeSpan.FromMilliseconds(1000);
                     serialDevices.Add(serialDevice);
+                    dataWriters.Add(new DataWriter(serialDevice.OutputStream));
                 }
                 catch (Exception ex)
                 {
@@ -45,23 +48,22 @@ namespace FantasmicCommon.Utils
             }
         }
 
-        public void SendData(Scene scene)
+        public async Task SendData(Scene scene)
         {
             string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
             Debug.WriteLine("Serial send: " + message);
-            Parallel.ForEach(serialDevices, async serialDevice =>
+            foreach (var dataWriter in dataWriters)
             {
                 try
                 {
-                    DataWriter dataWriteeObject = new DataWriter(serialDevice.OutputStream);
-                    dataWriteeObject.WriteString(message);
-                    await dataWriteeObject.StoreAsync();
+                    dataWriter.WriteString(message);
+                    await dataWriter.StoreAsync();
                 }
                 catch (Exception ex)
                 {
                     throw new Exception("error: " + ex.Message);
                 }
-            });
+            }
         }
 
         public async Task<string> ReceiveData()

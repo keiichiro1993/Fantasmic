@@ -36,16 +36,16 @@ void setup() {
   strip.show(); // Initialize all pixels to 'off'
 }
 
-int currentScene;
-int currentMode;
+int currentScene = 0;
+int currentMode = 8;
 bool introloop;
 
 //できればモード切替のたびに呼んだほうが良い。
 void initVariables(){
   introloop = false;
   strip.setBrightness(255);
-  currentScene = 0;
-  currentMode = 8;
+  //currentScene = 0;
+  //currentMode = 8;
 }
 
 void loop() {
@@ -64,6 +64,7 @@ void loop() {
   //intro(30,0,255);//strip.Color(0, 20, 180));
 
   int i;
+  bool first = true;
   if(currentScene == 0){  //アラビア
     switch(currentMode){
       case 0:
@@ -98,6 +99,58 @@ void loop() {
         rainbowCycle(20);
         break;
     }
+  }else if(currentScene == 2){//Princess
+    switch(currentMode){
+      case 0:
+        for(i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0, 0, 0));
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      case 1:
+        if(first){
+          strip.setBrightness(30);
+          for(i=0; i<strip.numPixels(); i++){
+            strip.setPixelColor(i, strip.Color(0, 0, 60));
+          }
+          strip.show();
+          for(int j=40; j<256; j+=2){
+            strip.setBrightness(j);
+            strip.show();
+            delay(10);
+          }
+          first = false;
+        }
+        delay(100);
+        break;
+      case 2:
+        for(i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0, 0, 60));
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      case 3:
+        for(i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0, 0, 60));
+        }
+        strip.show();
+        if(checkSignal()){
+          return;
+        }
+        delay(100);
+        break;
+      case 4:
+        
+        break;
+    }
   }
 
   checkSignal();//念のため変な設定になった時もSignalできるように。
@@ -130,6 +183,7 @@ bool checkSignal(){
   Serial.println(currentMode);
 
   str = "no data";
+  initVariables();
   return true;
 }
 
