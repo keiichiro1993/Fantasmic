@@ -29,14 +29,19 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
         bool isMediaStarted;
 
         public bool IsPlaying { get; set; }
+        public enum MediaActionPlayerType { Client, Server };
 
-        public MediaActionPlayer(MediaPlayerElement mediaPlayerElement, List<MediaAction> actions, CoreDispatcher dispatcher)
+        MediaActionPlayerType playerType;
+
+        public MediaActionPlayer(MediaPlayerElement mediaPlayerElement, List<MediaAction> actions, CoreDispatcher dispatcher, MediaActionPlayerType playerType)
         {
             IsPlaying = false;
             isInitialized = false;
             isMediaStarted = false;
+            this.playerType = playerType;
             tokenSource = new CancellationTokenSource();
             ct = tokenSource.Token;
+
             if (actions == null || actions.Count == 0)
             {
                 throw new ArgumentNullException("アクションが設定されていません。");
@@ -75,10 +80,12 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
 
         private async Task Init()
         {
-            //Bluetooth の準備
-            btServer = new BTServer();
-            await btServer.InitializeRfcommServer();
-
+            if (playerType == MediaActionPlayerType.Server)
+            {
+                //Bluetooth の準備
+                btServer = new BTServer();
+                await btServer.InitializeRfcommServer();
+            }
             //シリアルとシーン切り替えの準備
             //currentScene = new Scene(Scene.Scenes.Arabian, 3);
             serial = new SerialUtil();
@@ -131,32 +138,49 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
                         await dispatcher.RunAsync(CoreDispatcherPriority.High, async () =>
                         {
                             var count = 0;
-                            while (count < actions.Count && mediaPlayerElement.MediaPlayer.PlaybackSession.PlaybackState == Windows.Media.Playback.MediaPlaybackState.Playing)
+                            try
                             {
-                                if (ct.IsCancellationRequested)
+                                while (count < actions.Count && mediaPlayerElement.MediaPlayer.PlaybackSession.PlaybackState == Windows.Media.Playback.MediaPlaybackState.Playing)
                                 {
-                                    mediaPlayerElement.MediaPlayer.Pause();
-                                    ct.ThrowIfCancellationRequested();
-                                }
-
-                                var mediaAction = actions[count];
-
-                                if (TimeSpan.Compare(mediaAction.MediaTimeSpan, mediaPlayerElement.MediaPlayer.PlaybackSession.Position) <= 0)
-                                {
-                                    Debug.WriteLine("/Count: " + count.ToString() + " /Action: " + mediaAction.MediaScene.CurrentSequence);
-
-                                    var serialTask = serial.SendData(mediaAction.MediaScene);
-                                    var btTask = btServer.SendMessage(mediaAction.MediaScene);
-
-                                    while (!(serialTask.IsCompleted && btTask.IsCompleted))
+                                    if (ct.IsCancellationRequested)
                                     {
-                                        await Task.Delay(100);
+                                        mediaPlayerElement.MediaPlayer.Pause();
+                                        ct.ThrowIfCancellationRequested();
                                     }
 
-                                    count++;
-                                }
+                                    var mediaAction = actions[count];
 
-                                await Task.Delay(200);
+                                    if (TimeSpan.Compare(mediaAction.MediaTimeSpan, mediaPlayerElement.MediaPlayer.PlaybackSession.Position) <= 0)
+                                    {
+                                        Debug.WriteLine("/Count: " + count.ToString() + " /Action: " + mediaAction.MediaScene.CurrentSequence);
+
+                                        var serialTask = serial.SendData(mediaAction.MediaScene);
+                                        if (playerType == MediaActionPlayerType.Server)
+                                        {
+                                            var btTask = btServer.SendMessage(mediaAction.MediaScene);
+                                            while (!(serialTask.IsCompleted && btTask.IsCompleted))
+                                            {
+                                                await Task.Delay(100);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            while (!serialTask.IsCompleted)
+                                            {
+                                                await Task.Delay(100);
+                                            }
+                                        }
+
+
+                                        count++;
+                                    }
+
+                                    await Task.Delay(200);
+                                }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                return;
                             }
                         });
                     });
@@ -175,6 +199,7 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
         public void CancelPlay()
         {
             tokenSource.Cancel();
+            mediaPlayerElement.MediaPlayer.Pause();
         }
     }
 

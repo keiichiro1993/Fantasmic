@@ -47,9 +47,14 @@ namespace FantasmicHead
             Windows.UI.ViewManagement.ApplicationView.GetForCurrentView().TryEnterFullScreenMode();
             var sceneData = new SceneData();
 
+            await Play(sceneData);
+        }
+
+        private async Task Play(SceneData sceneData)
+        {
             foreach (var mediaSet in sceneData.MediaActionSets)
             {
-                while(mediaActionPlayer != null && mediaActionPlayer.IsPlaying)
+                while (mediaActionPlayer != null && mediaActionPlayer.IsPlaying)
                 {
                     await Task.Delay(500);
                 }
@@ -58,7 +63,7 @@ namespace FantasmicHead
                 {
                     if (mediaActionPlayer == null)
                     {
-                        mediaActionPlayer = new MediaActionPlayer(mediaPlayerElement, mediaSet.MediaActions, Dispatcher);
+                        mediaActionPlayer = new MediaActionPlayer(mediaPlayerElement, mediaSet.MediaActions, Dispatcher, MediaActionPlayer.MediaActionPlayerType.Server);
                     }
                     else
                     {
@@ -73,6 +78,7 @@ namespace FantasmicHead
                     await dlg.ShowAsync();
                 }
             }
+            await Play(sceneData);
         }
     }
 }

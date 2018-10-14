@@ -30,6 +30,7 @@ namespace FantasmicCommon.Models
     {
         public MediaSource MovieMediaSource { get; set; }
         public List<MediaAction> MediaActions { get; set; }
+        public Scene.Scenes MediaScene { get; set; }
 
         public MediaActionSet(MediaSource mediaSource, List<MediaAction> mediaActions)
         {
@@ -37,6 +38,7 @@ namespace FantasmicCommon.Models
             {
                 MovieMediaSource = mediaSource;
                 MediaActions = mediaActions;
+                MediaScene = MediaActions[0].MediaScene.CurrentScene;
             }
             else
             {

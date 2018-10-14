@@ -27,12 +27,12 @@ namespace ControllerApp
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        BTSender btClient;
+        BTClient btClient;
         MainPageViewModel viewModel;
         public MainPage()
         {
             this.InitializeComponent();
-            btClient = new BTSender(this);
+            btClient = new BTClient(this);
             btClient.InitializeCompleted += Sender_InitializeCompleted;
             btClient.MessageRecieved += BtClient_MessageRecieved;
             viewModel = new MainPageViewModel();
@@ -59,7 +59,7 @@ namespace ControllerApp
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
             //viewModel.MainMessage = "count: " + viewModel.DeviceInfoCollection.Count();
-            btClient.ConnectReciever(DeviceListBox.SelectedItem as DeviceInformation);
+           // btClient.ConnectReciever(DeviceListBox.SelectedItem as DeviceInformation);
             //this.btClient.StopDeviceWatcher();//クライアント側は２つ以上のデバイスと接続する必要ない
         }
     }

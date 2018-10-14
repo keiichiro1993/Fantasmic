@@ -43,6 +43,7 @@ namespace FantasmicCommon.Utils
                 }
                 catch (Exception ex)
                 {
+                    Debug.WriteLine("Serial初期化中のエラー: " + ex.Message);
                     continue;
                 }
             }

@@ -44,6 +44,12 @@ namespace FantasmicHead.Models
                     new MediaAction(new TimeSpan(0, 1, 20), new Scene(Scene.Scenes.Princess, 2)),
                     new MediaAction(new TimeSpan(0, 1, 22), new Scene(Scene.Scenes.Princess, 1)),
                     new MediaAction(new TimeSpan(0, 1, 31), new Scene(Scene.Scenes.Princess, 3))
+                }),
+            new MediaActionSet(
+                MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/FantasmicVillans2.mp4")),
+                new List<MediaAction>
+                {
+                    new MediaAction(new TimeSpan(0, 0, 0), new Scene(Scene.Scenes.Villans, 0))
                 })
         };
     }

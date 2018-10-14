@@ -14,7 +14,7 @@
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(58 , PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(59, PIN, NEO_GRB + NEO_KHZ800);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -42,6 +42,8 @@ bool introloop;
 int center1 = 6;
 int center2 = 25;
 
+int points[4] = {10, 10, 10 ,29};
+
 //できればモード切替のたびに呼んだほうが良い。
 void initVariables(){
   introloop = false;
@@ -49,6 +51,11 @@ void initVariables(){
   currentScene = 0;
   currentMode = 8;
 }
+
+int count = 0;
+int pointCount = 0; 
+int endNum = 0;
+int beginNum = 0;
 
 void loop() {
   // Some example procedures showing how to display to the pixels:
@@ -64,65 +71,30 @@ void loop() {
 */
   //始まりと最後の青と白のやつ, 色変えればほかの場面でも使えるかも
   //intro(30,0,255);//strip.Color(0, 20, 180));
-
-  int i;
-  if(currentScene == 0){  //アラビア
-    switch(currentMode){
-      case 0:
-        rotateColorInOneColor(strip.Color(0, 0, 255), strip.Color(0, 0, 50));
-        break;
-      case 1:
-        changeTwoColors(strip.Color(50, 50, 255), strip.Color(0, 0, 100));
-        break;
-      case 2:
-        changeTwoColors(strip.Color(0, 200, 70), strip.Color(100, 200, 0));
-        break;
-      case 3:
-        brighterOneColor(strip.Color(200, 0, 0));
-        break;
-      case 4:
-        brighterOneColor(strip.Color(200, 100, 0));
-        break;
-      case 5:
-        wipeTwoColors(strip.Color(50, 0, 255), strip.Color(100, 100, 100));
-        break;
-      case 6:
-        brighterOneColor(strip.Color(50, 0, 255));
-        break;
-      case 7://真っ暗
-        for(i=0; i<strip.numPixels(); i++){
-          strip.setPixelColor(i, strip.Color(0, 0, 0));
-        }
-        strip.show();
-        delay(100);
-        break;
-      default:
-        //intro(0,200,15);
-        //rainbowCycle(20);
-        brighterOneColor(strip.Color(255, 20, 0));
-        /*
-        twoCenterTest(strip.Color(255, 20, 0), 0);
-        delay(200);
-        twoCenterTest(strip.Color(0, 0, 0), 0);
-        delay(500);
-        twoCenterTest(strip.Color(255, 20, 0), 2);
-        delay(200);
-        twoCenterTest(strip.Color(0, 0, 0), 2);
-        delay(500);
-        twoCenterTest(strip.Color(255, 20, 0), 1);
-        delay(200);
-        twoCenterTest(strip.Color(0, 0, 0), 1);
-        delay(500);
-        */
-        break;
+  if(count < 10){
+    brighterOneColor(strip.Color(255, 255, 255));
+  }else if(count < 14){
+    if(pointCount == 0){
+      makeitBrighter(strip.Color(255, 255, 255));
+      beginNum = 0;
+      endNum = points[0];
+      fall(beginNum, endNum);
+    }else{
+      beginNum = endNum;
+      endNum += points[pointCount];
+      fall(beginNum, endNum);
     }
+    pointCount++;
+  }else if(count < 17){
+    delay(1000);
+  }else
+  {
+    count = 0;
+    pointCount = 0;
+    return;
   }
-
-  checkSignal();//念のため変な設定になった時もSignalできるように。
-  //delay(100);
-  //rainbow(20);
-  //rainbowCycle(20);
-  //theaterChaseRainbow(50);
+  //theaterChase(strip.Color(255, 255, 255), 50);
+  count++;
 }
 
 String str = "no data";
@@ -151,6 +123,35 @@ bool checkSignal(){
   return true;
 }
 
+
+void fall(int localBeginNum, int localEndNum)
+{
+  int brightness;
+  for(int j=0; j<255; j+=2){
+    brightness = 255 - j;
+    for(int i=localBeginNum; i<localEndNum; i++){
+      strip.setPixelColor(i, strip.Color(brightness, brightness, brightness));
+    }
+    strip.show();
+    delay(10);
+  }
+  delay(500);
+}
+
+void makeitBrighter(uint32_t color)
+{
+  for(int i=0; i<strip.numPixels(); i++){
+    strip.setPixelColor(i, color);
+  }
+  for(int j=40; j<255; j+=2){
+    for(int i=0; i<strip.numPixels(); i++){
+      strip.setPixelColor(i, strip.Color(j, j, j));
+    }
+    strip.show();
+    delay(10);
+  }
+}
+
 //一色を強弱付ける
 void brighterOneColor(uint32_t color){
 
@@ -160,29 +161,25 @@ void brighterOneColor(uint32_t color){
     strip.setPixelColor(i, color);
   }
 
-  for(j=40; j<256; j+=3){
-    strip.setBrightness(j);
-    //Serial.println(j);
+  for(j=40; j<255; j+=2){
+    for(i=0; i<strip.numPixels(); i++){
+      strip.setPixelColor(i, strip.Color(j, j, j));
+    }
     strip.show();
     delay(10);
   }
-  if(checkSignal())
-  {
-    return;
-  }
+
   delay(150);
 
-  for(j=0; j<215; j+=3){
+  for(j=0; j<215; j+=2){
     brightness = 255 - j;
-    //Serial.println(brightness);
-    strip.setBrightness(brightness);
+    for(i=0; i<strip.numPixels(); i++){
+      strip.setPixelColor(i, strip.Color(brightness, brightness, brightness));
+    }
     strip.show();
     delay(10);
   }
-  if(checkSignal())
-  {
-    return;
-  }
+
   delay(150);
 }
 

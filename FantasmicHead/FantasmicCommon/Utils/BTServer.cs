@@ -67,6 +67,7 @@ namespace FantasmicCommon.Utils
                 /*rootPage.NotifyUser(e.Message, NotifyType.ErrorMessage);
                 ListenButton.IsEnabled = true;
                 DisconnectButton.IsEnabled = false;*/
+                Debug.WriteLine(ex.Message + ": サーバーを開始できませんでした。");
                 throw new Exception("サーバーを開始できませんでした。", ex);
             }
             //rootPage.NotifyUser("Listening for incoming connections", NotifyType.StatusMessage);
@@ -136,9 +137,9 @@ namespace FantasmicCommon.Utils
 
             foreach (var btReaderWriter in btReaderWriters)
             {
-                btReaderWriter.btWriter.WriteUInt32((uint)message.Length);
-                btReaderWriter.btWriter.WriteString(message);
-                await btReaderWriter.btWriter.StoreAsync();
+                btReaderWriter.BTWriter.WriteUInt32((uint)message.Length);
+                btReaderWriter.BTWriter.WriteString(message);
+                await btReaderWriter.BTWriter.StoreAsync();
             }
         }
     }

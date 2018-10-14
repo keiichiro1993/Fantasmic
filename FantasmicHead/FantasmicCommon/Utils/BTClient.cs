@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,11 +18,13 @@ namespace FantasmicCommon.Utils.BTClient
 {
     public class BTInitEventArgs : EventArgs
     {
-        public BTInitEventArgs(string hostName)
+        public BTInitEventArgs(string hostName, bool isHeadDetected)
         {
             ConnectionHostName = hostName;
+            IsHeadDetected = isHeadDetected;
         }
         public string ConnectionHostName { get; set; }
+        public bool IsHeadDetected { get; set; }
     }
 
     public class BTMessageRecievedEventArgs : EventArgs
@@ -33,32 +36,40 @@ namespace FantasmicCommon.Utils.BTClient
         public string RecievedMessage { get; set; }
     }
 
-    public class BTSender
+    public class BTClient
     {
         DeviceWatcher deviceWatcher;
         Page mainPage;
 
-        StreamSocket chatSocket;
-        DataWriter chatWriter;
-        RfcommDeviceService chatService;
+        DeviceInformation FantasmicHead;
 
         public ObservableCollection<DeviceInformation> DeviceInfoCollection { get; set; }
 
-        public BTSender(Page mainPage)
+        public BTClient(Page mainPage)
         {
             this.mainPage = mainPage;
             DeviceInfoCollection = new ObservableCollection<DeviceInformation>();
+            FantasmicHead = null;
         }
 
         /*Events*/
         public event EventHandler InitializeCompleted;
         public event EventHandler MessageRecieved;
+        public event EventHandler DeviceAdded;
 
         protected async virtual void OnInitializeCompleted(BTInitEventArgs e)
         {
             await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
             {
                 InitializeCompleted?.Invoke(this, e);
+            });
+        }
+
+        protected async virtual void OnDeviceAdded(BTInitEventArgs e)
+        {
+            await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
+            {
+                DeviceAdded?.Invoke(this, e);
             });
         }
 
@@ -106,13 +117,22 @@ namespace FantasmicCommon.Utils.BTClient
             await mainPage.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, delegate
             {
                 DeviceInfoCollection.Add(deviceInfo);
-                OnInitializeCompleted(new BTInitEventArgs("found: " + deviceInfo.Name));
+                OnDeviceAdded(new BTInitEventArgs("found: " + deviceInfo.Name, false));
             });
         }
 
         private void deviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
-            OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices."));
+            bool isDetected = false;
+            var deviceInfo = DeviceInfoCollection.Where((x) => x.Name == "FANTASMICHEAD").FirstOrDefault();
+            if (deviceInfo != null)
+            {
+                isDetected = true;
+                FantasmicHead = deviceInfo;
+                var btRW = new BTReaderWriter(FantasmicHead);
+                ConnectReciever(btRW);
+            }
+            OnInitializeCompleted(new BTInitEventArgs("found: " + DeviceInfoCollection.Count.ToString() + " devices.", isDetected));
         }
 
         private async void deviceWatcher_UpdatedAsync(DeviceWatcher sender, DeviceInformationUpdate deviceInfoUpdate)
@@ -145,22 +165,42 @@ namespace FantasmicCommon.Utils.BTClient
             });
         }
 
-        public async void ConnectReciever(DeviceInformation device)
+        public async void ConnectReciever(BTReaderWriter btRW)
         {
-            var btRW = new BTReaderWriter(device);
-            await btRW.ConnectBTService();
-            ReceiveStringLoop(btRW.btReader);
+            try
+            {
+                await btRW.ConnectBTService();
+                ReceiveStringLoop(btRW);
+            }
+            catch (NullReferenceException ex)
+            {
+                Debug.WriteLine(ex.Message + " : BTサービス探索をリトライします。");
+                ConnectReciever(btRW);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine(ex.Message + ":" + ex.InnerException.Message);
+                ConnectReciever(btRW);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("不明なエラー: " + ex.Message + ":" + ex.InnerException?.Message);
+                ConnectReciever(btRW);
+            }
         }
 
-        private async void ReceiveStringLoop(DataReader chatReader)
+        private async void ReceiveStringLoop(BTReaderWriter btRW)
         {
+            var chatReader = btRW.BTReader;
+            Debug.WriteLine("/////entering revieve string roop/////");
             try
             {
                 uint size = await chatReader.LoadAsync(sizeof(uint));
                 if (size < sizeof(uint))
                 {
-                    Disconnect();
-                    return;
+                    //Disconnect();
+                    //return;
+                    ReceiveStringLoop(btRW);
                 }
 
                 uint stringLength = chatReader.ReadUInt32();
@@ -168,21 +208,22 @@ namespace FantasmicCommon.Utils.BTClient
                 if (actualStringLength != stringLength)
                 {
                     // The underlying socket was closed before we were able to read the whole data
-                    return;
+                    throw new InvalidOperationException("The underlying socket was closed before we were able to read the whole data");
                 }
 
                 //ConversationList.Items.Add("Received: " + chatReader.ReadString(stringLength));
                 //TODO: 受信した文字列のハンドル
                 String resultString = chatReader.ReadString(stringLength);
                 OnMessageRecieved(new BTMessageRecievedEventArgs(resultString));
+                Debug.WriteLine(resultString);
 
-                ReceiveStringLoop(chatReader);
+                ReceiveStringLoop(btRW);
             }
             catch (Exception ex)
             {
                 lock (this)
                 {
-                    if (chatSocket == null)
+                    if (btRW.BTStreamSocket == null)
                     {
                         // Do not print anything here -  the user closed the socket.
                         if ((uint)ex.HResult == 0x80072745)
@@ -196,33 +237,10 @@ namespace FantasmicCommon.Utils.BTClient
                     }
                     else
                     {
-                        Disconnect();
-                        throw new Exception("サーバーとの接続が解除されました。", ex);
+                        btRW.Disconnect();
+                        Debug.WriteLine("サーバーとの接続が切断されました。");
+                        //throw new Exception("サーバーとの接続が解除されました。", ex);
                     }
-                }
-            }
-        }
-
-        private void Disconnect()
-        {
-            if (chatWriter != null)
-            {
-                chatWriter.DetachStream();
-                chatWriter = null;
-            }
-
-
-            if (chatService != null)
-            {
-                chatService.Dispose();
-                chatService = null;
-            }
-            lock (this)
-            {
-                if (chatSocket != null)
-                {
-                    chatSocket.Dispose();
-                    chatSocket = null;
                 }
             }
         }
