@@ -86,7 +86,8 @@ namespace FantasmicMirror
 
         private async void BtClient_MessageRecieved(object sender, EventArgs e)
         {
-            debugBox.Text = (e as BTMessageRecievedEventArgs).RecievedMessage;
+            //debugBox.Text = (e as BTMessageRecievedEventArgs).RecievedMessage;
+            debugBox.Text = "";
             Regex reg = new Regex("Request Change:Scene(?<scene>.*?):Mode");
             Match match = reg.Match((e as BTMessageRecievedEventArgs).RecievedMessage);
             var requestedScene = (Scene.Scenes)int.Parse(match.Groups["scene"].Value);

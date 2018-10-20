@@ -192,10 +192,11 @@ namespace FantasmicCommon.Utils.BTClient
         private async void ReceiveStringLoop(BTReaderWriter btRW)
         {
             var chatReader = btRW.BTReader;
-            Debug.WriteLine("/////entering revieve string roop/////");
+            Debug.WriteLine("/////entering recieve string roop/////");
             try
             {
                 uint size = await chatReader.LoadAsync(sizeof(uint));
+                Debug.WriteLine("size check in ReceiveStringLoop");
                 if (size < sizeof(uint))
                 {
                     //Disconnect();
@@ -203,7 +204,10 @@ namespace FantasmicCommon.Utils.BTClient
                     ReceiveStringLoop(btRW);
                 }
 
+                Debug.WriteLine("ReadUInt32 in ReceiveStringLoop");
                 uint stringLength = chatReader.ReadUInt32();
+
+                Debug.WriteLine("LoadAsync in ReceiveStringLoop");
                 uint actualStringLength = await chatReader.LoadAsync(stringLength);
                 if (actualStringLength != stringLength)
                 {
@@ -217,6 +221,13 @@ namespace FantasmicCommon.Utils.BTClient
                 OnMessageRecieved(new BTMessageRecievedEventArgs(resultString));
                 Debug.WriteLine(resultString);
 
+                ReceiveStringLoop(btRW);
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Debug.WriteLine("BT接続がDisposeされています。再接続を試みます。: " + ex.Message);
+                //disposedReaderWriters.Add(btReaderWriter);
+                await btRW.ConnectBTService();
                 ReceiveStringLoop(btRW);
             }
             catch (Exception ex)
@@ -238,7 +249,7 @@ namespace FantasmicCommon.Utils.BTClient
                     else
                     {
                         btRW.Disconnect();
-                        Debug.WriteLine("サーバーとの接続が切断されました。");
+                        Debug.WriteLine("サーバーとの接続が切断されました。: " + ex.Message + ":::" + ex.HResult);
                         //throw new Exception("サーバーとの接続が解除されました。", ex);
                     }
                 }

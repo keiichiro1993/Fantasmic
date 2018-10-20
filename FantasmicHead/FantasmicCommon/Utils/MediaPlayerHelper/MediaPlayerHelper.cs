@@ -33,6 +33,8 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
 
         MediaActionPlayerType playerType;
 
+        Scene.Scenes previousScene;
+
         public MediaActionPlayer(MediaPlayerElement mediaPlayerElement, List<MediaAction> actions, CoreDispatcher dispatcher, MediaActionPlayerType playerType)
         {
             IsPlaying = false;
@@ -91,9 +93,10 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
             serial = new SerialUtil();
             await serial.InitSerial();
 
+            previousScene = actions[0].MediaScene.CurrentScene;
+
             await serial.SendData(new Scene(Scene.Scenes.Arabian, 7));
             mediaPlayerElement.MediaPlayer.PlaybackSession.PlaybackStateChanged += PlaybackSession_PlaybackStateChanged;
-
             isInitialized = true;
         }
 
@@ -118,6 +121,13 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
             if (!isInitialized)
             {
                 await Init();
+            }
+
+            if (ct.IsCancellationRequested)
+            {
+                tokenSource.Dispose();
+                tokenSource = new CancellationTokenSource();
+                ct = tokenSource.Token;
             }
 
             await dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
@@ -157,10 +167,21 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
                                         var serialTask = serial.SendData(mediaAction.MediaScene);
                                         if (playerType == MediaActionPlayerType.Server)
                                         {
-                                            var btTask = btServer.SendMessage(mediaAction.MediaScene);
-                                            while (!(serialTask.IsCompleted && btTask.IsCompleted))
+                                            if (previousScene != mediaAction.MediaScene.CurrentScene)
                                             {
-                                                await Task.Delay(100);
+                                                previousScene = mediaAction.MediaScene.CurrentScene;
+                                                var btTask = btServer.SendMessage(mediaAction.MediaScene);
+                                                while (!(serialTask.IsCompleted && btTask.IsCompleted))
+                                                {
+                                                    await Task.Delay(100);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                while (!serialTask.IsCompleted)
+                                                {
+                                                    await Task.Delay(100);
+                                                }
                                             }
                                         }
                                         else

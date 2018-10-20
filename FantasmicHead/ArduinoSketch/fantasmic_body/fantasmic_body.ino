@@ -47,8 +47,8 @@ int center2 = 25;
 void initVariables(){
   introloop = false;
   strip.setBrightness(100);
-  currentScene = 0;
-  currentMode = 8;
+  currentScene = 3;
+  currentMode = 0;
 }
 
 void loop() {
@@ -100,9 +100,9 @@ void loop() {
       default:
         //intro(0,200,15);
         //rainbowCycle(20);
-        brighterOneColor(strip.Color(255, 20, 0));
-        /*
-        twoCenterTest(strip.Color(255, 20, 0), 0);
+        //brighterOneColor(strip.Color(255, 20, 0));
+        
+        /*twoCenterTest(strip.Color(255, 20, 0), 0);
         delay(200);
         twoCenterTest(strip.Color(0, 0, 0), 0);
         delay(500);
@@ -113,11 +113,42 @@ void loop() {
         twoCenterTest(strip.Color(255, 20, 0), 1);
         delay(200);
         twoCenterTest(strip.Color(0, 0, 0), 1);
-        delay(500);
         */
+        delay(100);
+        
         break;
     }
+      }else if(currentScene == 3){
+      switch(currentMode){
+        case 0:
+          intro(0,200,10);
+            if(checkSignal())
+  {
+    return;
   }
+          break;
+        case 1:
+          for(int i = 0; i<strip.numPixels(); i++)
+          {
+            strip.setPixelColor(i,strip.Color(0,0,0));
+          }
+          strip.show();
+          twoCenterTest(strip.Color(255, 20, 0), 0);
+          delay(200);
+          twoCenterTest(strip.Color(0, 0, 0), 0);
+          delay(500);
+          twoCenterTest(strip.Color(255, 20, 0), 2);
+          delay(200);
+          twoCenterTest(strip.Color(0, 0, 0), 2);
+          delay(500);
+          currentMode = 2;
+          break;
+        case 2:
+          intro(100,0,0);
+          //rotateWhiteInOneColor(strip.Color(100,0,0));
+          break;
+      }
+    }
 
   checkSignal();//念のため変な設定になった時もSignalできるように。
   //delay(100);
@@ -200,7 +231,7 @@ void rotateWhiteInOneColor(uint32_t color){
     strip.setPixelColor(i, white);
     strip.setPixelColor(i+1, white);
     strip.show();
-    delay(50);
+    delay(10);
     if(checkSignal())
     {
       return;
@@ -339,7 +370,7 @@ void intro(float red, float green, float blue){//uint32_t c) {
   uint32_t color, subcolor, white, subwhite;
 
   for(k=0; k<2; k++){
-    for(j=0; j<1.0; j+=0.002){
+    for(j=0; j<1.0; j+=0.01){
       brightness = 1.0 - j;
       color = strip.Color(red * j, green * j, blue * j);
       subcolor = strip.Color(red * brightness, green * brightness, blue * brightness);
@@ -376,10 +407,11 @@ void intro(float red, float green, float blue){//uint32_t c) {
       }
 
      strip.show();
-     if(checkSignal())
-     {
-       return;
-     }
+     delay(20); 
+   }
+   if(checkSignal())
+   {
+    return;
    }
   }
   introloop = true;

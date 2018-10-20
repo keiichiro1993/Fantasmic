@@ -20,6 +20,7 @@ namespace FantasmicCommon.Utils
         private StreamSocketListener socketListener;
 
         private List<BTReaderWriter> btReaderWriters;
+        private List<BTReaderWriter> disposedReaderWriters;
 
         //TODO: writerをリストにして複数デバイス管理
 
@@ -30,6 +31,7 @@ namespace FantasmicCommon.Utils
         public async Task InitializeRfcommServer()
         {
             btReaderWriters = new List<BTReaderWriter>();
+            disposedReaderWriters = new List<BTReaderWriter>();
             try
             {
                 serviceProvider = await RfcommServiceProvider.CreateAsync(RfcommServiceId.FromUuid(Constants.RfcommChatServiceUuid));
@@ -128,18 +130,39 @@ namespace FantasmicCommon.Utils
 
             var btReaderWriter = new BTReaderWriter(reader, writer);
             btReaderWriters.Add(btReaderWriter);
+
+            //await SendMessage(new Scene(Scene.Scenes.Arabian, 0));
         }
 
         public async Task SendMessage(Scene scene)
         {
             string message = "Request Change:Scene" + (int)scene.CurrentScene + ":Mode" + scene.CurrentSequence + "\n";
             Debug.WriteLine("Bluetooth send: " + message);
-
             foreach (var btReaderWriter in btReaderWriters)
             {
-                btReaderWriter.BTWriter.WriteUInt32((uint)message.Length);
-                btReaderWriter.BTWriter.WriteString(message);
-                await btReaderWriter.BTWriter.StoreAsync();
+                try
+                {
+                    btReaderWriter.BTWriter.WriteUInt32((uint)message.Length);
+                    Debug.Write("message length: " + message.Length);
+                    btReaderWriter.BTWriter.WriteString(message);
+                    Debug.Write("wrote message: " + message);
+                    await btReaderWriter.BTWriter.StoreAsync();
+                }
+
+                catch (ObjectDisposedException ex)
+                {
+                    Debug.WriteLine("BT接続がDisposeされています。: " + ex.Message);
+                    disposedReaderWriters.Add(btReaderWriter);
+                }
+            }
+
+            if (disposedReaderWriters.Count > 0)
+            {
+                foreach (var btReaderWriter in disposedReaderWriters)
+                {
+                    btReaderWriters.Remove(btReaderWriter);
+                }
+                disposedReaderWriters.Clear();
             }
         }
     }
