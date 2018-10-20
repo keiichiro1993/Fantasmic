@@ -93,5 +93,18 @@ namespace FantasmicCommon.Utils
 
             return reply;
         }
+
+        public async Task DisposeSerial()
+        {
+            await Task.Delay(100);
+            foreach (var serialDevice in serialDevices)
+            {
+                serialDevice.Dispose();
+            }
+            foreach (var writer in dataWriters)
+            {
+                writer.Dispose();
+            }
+        }
     }
 }

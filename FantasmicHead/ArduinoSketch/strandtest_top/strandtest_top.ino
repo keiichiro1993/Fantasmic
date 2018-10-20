@@ -48,6 +48,10 @@ void initVariables(){
   //currentScene = 0;
   //currentMode = 8;
   first = true;
+  for(int i=0; i<strip.numPixels(); i++){
+    strip.setPixelColor(i, strip.Color(0,0,0));
+  }
+  strip.show();
 }
 
 void loop() {
@@ -107,7 +111,7 @@ void loop() {
     switch(currentMode){
       case 0:
         if(first){
-          strip.setBrightness(30);
+          //strip.setBrightness(30);
           for(i=0; i<strip.numPixels(); i++){
             if(i%3 == 0){
               strip.setPixelColor(i, strip.Color(200, 50, 100));
@@ -117,12 +121,12 @@ void loop() {
             }
           }
           strip.show();
-          for(int j=40; j<256; j+=2){
+          /*for(int j=40; j<256; j+=2){
             strip.setBrightness(j);
             //Serial.println(j);
             strip.show();
             delay(10);
-          }
+          }*/
           first = false;
         }
         if(checkSignal()){
@@ -150,11 +154,11 @@ void loop() {
         delay(100);
         break;
       case 2:
-        strip.setBrightness(255);
+        //strip.setBrightness(255);
         changeTwoColors(strip.Color(60, 10, 30), strip.Color(255, 255, 255), 100);
         break;
       case 3:
-        strip.setBrightness(255);
+        //strip.setBrightness(255);
         for(i=0; i<strip.numPixels(); i++){
           strip.setPixelColor(i, strip.Color(0, 0, 60));
         }
@@ -180,6 +184,16 @@ void loop() {
         break;
       default:
         rainbowCycle(20);
+        break;
+    }
+  }else if(currentScene == 3){//Villans
+    switch(currentMode){
+      case 0:
+        intro(0,200,10);
+        if(checkSignal())
+        {
+          return;
+        }
         break;
     }
   }
@@ -404,7 +418,7 @@ void intro(float red, float green, float blue){//uint32_t c) {
   uint32_t color, subcolor, white, subwhite;
 
   for(k=0; k<2; k++){
-    for(j=0; j<1.0; j+=0.002){
+    for(j=0; j<1.0; j+=0.01){
       brightness = 1.0 - j;
       color = strip.Color(red * j, green * j, blue * j);
       subcolor = strip.Color(red * brightness, green * brightness, blue * brightness);
@@ -441,11 +455,16 @@ void intro(float red, float green, float blue){//uint32_t c) {
       }
 
      strip.show();
-     delay(15);
+     delay(20); 
+   }
+   if(checkSignal())
+   {
+    return;
    }
   }
   introloop = true;
 }
+
 
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {

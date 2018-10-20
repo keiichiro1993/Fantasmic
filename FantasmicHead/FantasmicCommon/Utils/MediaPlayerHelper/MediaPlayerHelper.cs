@@ -89,13 +89,12 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
                 await btServer.InitializeRfcommServer();
             }
             //シリアルとシーン切り替えの準備
-            //currentScene = new Scene(Scene.Scenes.Arabian, 3);
-            serial = new SerialUtil();
+            /*serial = new SerialUtil();
             await serial.InitSerial();
-
+            await serial.SendData(new Scene(Scene.Scenes.Arabian, 7));*/
             previousScene = actions[0].MediaScene.CurrentScene;
-
-            await serial.SendData(new Scene(Scene.Scenes.Arabian, 7));
+            
+            //await serial.SendData(new Scene(Scene.Scenes.Arabian, 7));
             mediaPlayerElement.MediaPlayer.PlaybackSession.PlaybackStateChanged += PlaybackSession_PlaybackStateChanged;
             isInitialized = true;
         }
@@ -123,12 +122,23 @@ namespace FantasmicCommon.Utils.MediaPlayerHelper
                 await Init();
             }
 
+            //毎回USBシリアルを検出するように。
+            if (serial != null)
+            {
+                await serial.DisposeSerial();
+            }
+            serial = new SerialUtil();
+            await serial.InitSerial();
+            await serial.SendData(new Scene(Scene.Scenes.Arabian, 7));
+
+
             if (ct.IsCancellationRequested)
             {
                 tokenSource.Dispose();
                 tokenSource = new CancellationTokenSource();
                 ct = tokenSource.Token;
             }
+
 
             await dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
             {

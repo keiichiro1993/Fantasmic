@@ -17,10 +17,10 @@ namespace FantasmicMirror.Models
                 new List<MediaAction>
                 {
                     new MediaAction(new TimeSpan(0, 0, 0), new Scene(Scene.Scenes.Villans, 0)),
-                    new MediaAction(new TimeSpan(0, 0, 57), new Scene(Scene.Scenes.Villans, 1)),
+                    new MediaAction(new TimeSpan(0, 0, 56), new Scene(Scene.Scenes.Villans, 1)),
                 }),
             new MediaActionSet(
-                MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/fantasmic_aladdin480p2.mp4")),
+                MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Videos/fantasmic_aladdin_formirror.mp4")),
                 new List<MediaAction>
                 {
                     new MediaAction(new TimeSpan(0, 0, 3), new Scene(Scene.Scenes.Arabian, 0)),
@@ -30,6 +30,8 @@ namespace FantasmicMirror.Models
                 new List<MediaAction>
                 {
                     new MediaAction(new TimeSpan(0, 0, 0), new Scene(Scene.Scenes.Princess, 0)),
+                    new MediaAction(new TimeSpan(0, 0, 18), new Scene(Scene.Scenes.Princess, 1)),
+                    new MediaAction(new TimeSpan(0, 0, 21), new Scene(Scene.Scenes.Princess, 2)),
                 })
         };
     }

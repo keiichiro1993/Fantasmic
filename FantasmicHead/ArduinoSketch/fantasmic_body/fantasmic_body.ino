@@ -43,12 +43,15 @@ bool introloop;
 int center1 = 6;
 int center2 = 25;
 
+bool princessFirst = true;
+
 //できればモード切替のたびに呼んだほうが良い。
 void initVariables(){
   introloop = false;
   strip.setBrightness(100);
   currentScene = 3;
   currentMode = 0;
+  princessFirst = true;
 }
 
 void loop() {
@@ -70,13 +73,13 @@ void loop() {
   if(currentScene == 0){  //アラビア
     switch(currentMode){
       case 0:
-        rotateColorInOneColor(strip.Color(0, 0, 255), strip.Color(0, 0, 50));
+        brighterOneColor(strip.Color(50, 0, 255));
         break;
       case 1:
-        changeTwoColors(strip.Color(50, 50, 255), strip.Color(0, 0, 100));
+        rotateWhiteInOneColor(strip.Color(50, 0, 255));
         break;
       case 2:
-        changeTwoColors(strip.Color(0, 200, 70), strip.Color(100, 200, 0));
+        rotateTwoColors(strip.Color(200, 0, 70), strip.Color(50, 0, 255), 5);
         break;
       case 3:
         brighterOneColor(strip.Color(200, 0, 0));
@@ -98,57 +101,76 @@ void loop() {
         delay(100);
         break;
       default:
-        //intro(0,200,15);
-        //rainbowCycle(20);
-        //brighterOneColor(strip.Color(255, 20, 0));
-        
-        /*twoCenterTest(strip.Color(255, 20, 0), 0);
+        rainbowCycle(20);
+        break;
+    }
+  }else if(currentScene == 2){//Princess
+    switch(currentMode){
+      case 0:
+        for(int i=0; i<strip.numPixels(); i++){
+          strip.setPixelColor(i, strip.Color(0,0,0));
+        }
+        strip.show();
+        delay(100);
+        break;
+      case 1:
+        //strip.setBrightness(150);
+        changeTwoColors(strip.Color(60, 10, 30), strip.Color(120, 120, 120), 110);
+        break;
+      case 2:
+        if(princessFirst)
+        {
+          princessFirst = false;
+          //strip.setBrightness(40);
+          for(int j=0; j<strip.numPixels(); j++){
+            if(17 - j >= 0){
+              strip.setPixelColor(17-j, strip.Color(10*j, 10*j/2, 100));
+            }
+            if(16 + j < strip.numPixels()){
+              strip.setPixelColor(17+j, strip.Color(10*j, 10*j/2, 100));
+            }
+          }
+          strip.show();
+          /*for(int i=40; i<254; i+=2){
+            strip.setBrightness(i);
+            strip.show();
+            delay(10);
+          }*/
+        }
+        delay(100);
+        break;
+    }
+  }else if(currentScene == 3){//Villans
+    switch(currentMode){
+      case 0:
+        intro(0,200,10);
+        if(checkSignal())
+        {
+          return;
+        }
+        break;
+      case 1:
+        for(int i = 0; i<strip.numPixels(); i++)
+        {
+          strip.setPixelColor(i,strip.Color(0,0,0));
+        }
+        strip.show();
+        twoCenterTest(strip.Color(255, 20, 0), 0);
         delay(200);
         twoCenterTest(strip.Color(0, 0, 0), 0);
-        delay(500);
+        delay(400);
         twoCenterTest(strip.Color(255, 20, 0), 2);
         delay(200);
         twoCenterTest(strip.Color(0, 0, 0), 2);
         delay(500);
-        twoCenterTest(strip.Color(255, 20, 0), 1);
-        delay(200);
-        twoCenterTest(strip.Color(0, 0, 0), 1);
-        */
-        delay(100);
-        
+        currentMode = 2;
+        break;
+      case 2:
+        intro(100,0,0);
+        //rotateWhiteInOneColor(strip.Color(100,0,0));
         break;
     }
-      }else if(currentScene == 3){
-      switch(currentMode){
-        case 0:
-          intro(0,200,10);
-            if(checkSignal())
-  {
-    return;
   }
-          break;
-        case 1:
-          for(int i = 0; i<strip.numPixels(); i++)
-          {
-            strip.setPixelColor(i,strip.Color(0,0,0));
-          }
-          strip.show();
-          twoCenterTest(strip.Color(255, 20, 0), 0);
-          delay(200);
-          twoCenterTest(strip.Color(0, 0, 0), 0);
-          delay(500);
-          twoCenterTest(strip.Color(255, 20, 0), 2);
-          delay(200);
-          twoCenterTest(strip.Color(0, 0, 0), 2);
-          delay(500);
-          currentMode = 2;
-          break;
-        case 2:
-          intro(100,0,0);
-          //rotateWhiteInOneColor(strip.Color(100,0,0));
-          break;
-      }
-    }
 
   checkSignal();//念のため変な設定になった時もSignalできるように。
   //delay(100);
@@ -272,7 +294,7 @@ void rotateColorInOneColor(uint32_t color1, uint32_t color2){
   }
 }
 
-void changeTwoColors(uint32_t color1, uint32_t color2)
+void changeTwoColors(uint32_t color1, uint32_t color2, int delayInt)
 {
   int i, j;
 
@@ -280,15 +302,17 @@ void changeTwoColors(uint32_t color1, uint32_t color2)
   {
     for(i=0; i<strip.numPixels(); i++)
     {
-      if((i%6 == 0 && j == 0) || (i%6 == 3 && j == 1))
-      {
-        strip.setPixelColor(i, color1);
-      }else if((i%6 == 3 && j == 0) || (i%6 == 0 && j == 1))
-      {
-        strip.setPixelColor(i, color2);
-      }else
-      {
-        strip.setPixelColor(i, 0);
+      if(i<7 || i > 24){
+        if((i%2 == 0 && j == 0) || (i%2 == 1 && j == 1))
+        {
+          strip.setPixelColor(i, color1);
+        }else if((i%2 == 1 && j == 0) || (i%2 == 0 && j == 1))
+        {
+          strip.setPixelColor(i, color2);
+        }else
+        {
+          strip.setPixelColor(i, 0);
+        }
       }
     }
     strip.show();
@@ -296,7 +320,7 @@ void changeTwoColors(uint32_t color1, uint32_t color2)
     {
       return;
     }
-    delay(250);
+    delay(delayInt);
   } 
 }
 
